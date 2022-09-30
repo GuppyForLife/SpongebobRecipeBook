@@ -2,7 +2,7 @@ const path = require("path");
 const express = require("express");
 const { sequelize } = require("./db/db");
 const cors = require('cors');
-const routes = require('./src/routes')
+const routes = require('./src/')
 
 sequelize
   .authenticate()
