@@ -73,3 +73,20 @@ exports.deleteRecipeById = async (req, res) => {
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
+
+exports.createRecipe = async (req, res) => {
+  try {
+    const newRecipe = req.body;
+    const createdRecipe = await Recipe.create(newRecipe);
+    res.status(200).json({
+      createdRecipe,
+      success: true,
+      message: "Recipe successfully create"
+    })
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ success: false, message: `- Error ${error.message}` });
+  }
+}
