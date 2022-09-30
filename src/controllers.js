@@ -48,3 +48,28 @@ exports.getRecipeById = async (req, res) => {
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
+
+exports.deleteRecipeById = async (req, res) => {
+  const recipeId = req.params.id;
+  try {
+    const recipeToDelete = await Recipe.findByPk(recipeId);
+    if (!recipeToDelete) {
+      res.status(400).json({
+        success: false,
+        message: "Recipe not found",
+      });
+    } else {
+      const deletedRecipe = await recipeToDelete.destroy();
+      res.status(200).json({
+        deletedRecipe,
+        success: true,
+        message: "Recipe successfully deleted",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ success: false, message: `- Error ${error.message}` });
+  }
+};
