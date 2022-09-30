@@ -90,3 +90,28 @@ exports.createRecipe = async (req, res) => {
       .json({ success: false, message: `- Error ${error.message}` });
   }
 }
+
+exports.updateRecipe = async (req, res) => {
+  const recipeId = req.params.id;
+  try {
+    const recipeToUpdate = await Recipe.findByPk(recipeId);
+    if (!recipeToUpdate) {
+      res.status(400).json({
+        success: false,
+        message: "Recipe not found",
+      });
+    } else {
+      const updateRecipe = await recipeToUpdate.update(req.body)
+      res.status(200).json({
+        updateRecipe,
+        success: true,
+        message: "Recipe successfully updated",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ success: false, message: `- Error ${error.message}` });
+  }
+}
