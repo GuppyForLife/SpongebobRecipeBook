@@ -1,8 +1,8 @@
 const path = require("path");
 const express = require("express");
 const { sequelize } = require("./db/db");
-const cors = require('cors');
-const routes = require('./src/routes')
+const cors = require("cors");
+const routes = require("./src/routes");
 
 sequelize
   .authenticate()
@@ -14,9 +14,10 @@ sequelize
 
 const app = express();
 app.use(cors());
+app.use(express.static(path.join(__dirname, "src", "public")));
 app.use(express.json());
+app.use("/api", routes);
 
-app.use('/api', routes);
 const server = app.listen(8000, () => {
-    console.log('Server is up and running on PORT: 8000');
+  console.log("Server is up and running on PORT: 8000");
 });
