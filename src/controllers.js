@@ -81,15 +81,15 @@ exports.createRecipe = async (req, res) => {
     res.status(200).json({
       createdRecipe,
       success: true,
-      message: "Recipe successfully create"
-    })
+      message: "Recipe successfully create",
+    });
   } catch (error) {
     console.log(error);
     res
       .status(400)
       .json({ success: false, message: `- Error ${error.message}` });
   }
-}
+};
 
 exports.updateRecipe = async (req, res) => {
   const recipeId = req.params.id;
@@ -101,7 +101,7 @@ exports.updateRecipe = async (req, res) => {
         message: "Recipe not found",
       });
     } else {
-      const updateRecipe = await recipeToUpdate.update(req.body)
+      const updateRecipe = await recipeToUpdate.update(req.body);
       res.status(200).json({
         updateRecipe,
         success: true,
@@ -114,4 +114,28 @@ exports.updateRecipe = async (req, res) => {
       .status(400)
       .json({ success: false, message: `- Error ${error.message}` });
   }
-}
+};
+
+exports.searchByKeyword = async (req, res) => {
+  try {
+    const allRecipes = await Recipe.findAll();
+    const keyword = req.query.keyword.toLowerCase();
+    const recipesFound = allRecipes.filter((recipe) =>
+      recipe.title.toLowerCase().includes(keyword)
+    );
+
+    res.status(200).json({
+      recipesFound,
+      success: true,
+      message:
+        recipesFound.lenght > 0
+          ? `Recipes with the keyword: ${keyword} in the title`
+          : `No matching titles containing the keyword: ${keyword}`,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(400)
+      .json({ success: false, message: `- Error ${error.message}` });
+  }
+};

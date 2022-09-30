@@ -9,9 +9,11 @@ const {
   deleteRecipeById,
   createRecipe,
   updateRecipe,
+  searchByKeyword,
 } = require("./controllers");
 
 router.get("*/recipes", getAllRecipes);
+router.get("/recipes/search", searchByKeyword);
 router.get("/recipes/:id", getRecipeById);
 router.delete("/recipes/delete/:id", deleteRecipeById);
 router.post("/recipes/create", createRecipe);
