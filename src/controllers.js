@@ -1,5 +1,7 @@
 const { sequelize } = require("../db/db");
 const { Recipe } = require("../db/Recipe");
+const { User } = require("../db/User");
+const bcrypt = require("bcryptjs/dist/bcrypt");
 
 exports.getAllRecipes = async (req, res) => {
   try {
@@ -139,3 +141,42 @@ exports.searchByKeyword = async (req, res) => {
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
+
+exports.registerNewUser = async (req, res) => {
+  const SALT_COUNT = 8;
+  const { username } = req.body;
+  const { name } = req.body;
+  const { password } = req.body;
+  const { email } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
+    const newUser = await User.create({username, name, password: hashedPassword, email, isAdmin: false});
+    res.status(200).send(`Successfully created user: ${username}`)
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: `User not created ~ error: ${error.message}`
+    })
+  }
+}
+
+exports.loginUser = async (req, res) => {
+  const { username } = req.body;
+  const { password } = req.body;
+  try {
+    const userToLogin = await User.findOne({where: {username}});
+  if(userToLogin){
+    const passwordsMatch = await bcrypt.compare(password, userToLogin.password);
+    if(passwordsMatch){
+      res.status(200).send(`${username} successfull logged in`)
+    } else {
+      res.status(401).send(`Incorrect username or password`)
+    }
+  }
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: `User not logged in ~ error: ${error.message}`
+    })
+  }
+}
