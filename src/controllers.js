@@ -146,18 +146,14 @@ exports.searchByKeyword = async (req, res) => {
 
 exports.registerNewUser = async (req, res) => {
   const SALT_COUNT = 8;
-  const { username } = req.body;
-  const { name } = req.body;
-  const { password } = req.body;
-  const { email } = req.body;
+  const { username, name, password, email } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
     const newUser = await User.create({
       username,
       name,
       password: hashedPassword,
-      email,
-      isAdmin: false,
+      email
     });
     res.status(200).send(`Successfully created user: ${username}`);
   } catch (error) {
@@ -169,8 +165,7 @@ exports.registerNewUser = async (req, res) => {
 };
 
 exports.loginUser = async (req, res) => {
-  const { username } = req.body;
-  const { password } = req.body;
+  const { username, password } = req.body;
   try {
     const userToLogin = await User.findOne({ where: { username } });
     if (userToLogin) {
