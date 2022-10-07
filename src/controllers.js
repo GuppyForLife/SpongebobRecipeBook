@@ -1,7 +1,9 @@
+require("dotenv").config();
 const { sequelize } = require("../db/db");
 const { Recipe } = require("../db/Recipe");
 const { User } = require("../db/User");
 const bcrypt = require("bcryptjs/dist/bcrypt");
+const jwt = require("jsonwebtoken");
 
 exports.getAllRecipes = async (req, res) => {
   try {
@@ -150,33 +152,69 @@ exports.registerNewUser = async (req, res) => {
   const { email } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
-    const newUser = await User.create({username, name, password: hashedPassword, email, isAdmin: false});
-    res.status(200).send(`Successfully created user: ${username}`)
+    const newUser = await User.create({
+      username,
+      name,
+      password: hashedPassword,
+      email,
+      isAdmin: false,
+    });
+    res.status(200).send(`Successfully created user: ${username}`);
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: `User not created ~ error: ${error.message}`
-    })
+      message: `User not created ~ error: ${error.message}`,
+    });
   }
-}
+};
 
 exports.loginUser = async (req, res) => {
   const { username } = req.body;
   const { password } = req.body;
   try {
-    const userToLogin = await User.findOne({where: {username}});
-  if(userToLogin){
-    const passwordsMatch = await bcrypt.compare(password, userToLogin.password);
-    if(passwordsMatch){
-      res.status(200).send(`${username} successfull logged in`)
+    const userToLogin = await User.findOne({ where: { username } });
+    if (userToLogin) {
+      const passwordsMatch = await bcrypt.compare(
+        password,
+        userToLogin.password
+      );
+      if (passwordsMatch) {
+        const accessToken = jwt.sign(
+          { username: username },
+          process.env.ACCESS_TOKEN_SECRET
+        );
+        res.status(200).json({
+          success: true,
+          message: `Successfully logged in ${username}`,
+          accessToken: accessToken,
+        });
+      } else {
+        res.status(401).send(`Incorrect username or password`);
+      }
     } else {
-      res.status(401).send(`Incorrect username or password`)
+      res.status(401).send(`Incorrect username or password`);
     }
-  }
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: `User not logged in ~ error: ${error.message}`
-    })
+      message: `User not logged in ~ error: ${error.message}`,
+    });
   }
-}
+};
+
+exports.authenticateTokenMiddleware = async (req, res, next) => {
+  const authHeader = req.header('Authorization');
+  const token = authHeader && authHeader.split(" ")[1];
+  console.log(token);
+  if (token === null) {
+    return res.sendStatus(401);
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+    req.user = user;
+    next();
+  });
+};

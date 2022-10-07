@@ -11,16 +11,17 @@ const {
   updateRecipe,
   searchByKeyword,
   registerNewUser,
-  loginUser
+  loginUser,
+  authenticateTokenMiddleware
 } = require("./controllers");
 
-router.get("*/recipes", getAllRecipes);
-router.get("/recipes/search", searchByKeyword);
-router.get("/recipes/:id", getRecipeById);
-router.delete("/recipes/delete/:id", deleteRecipeById);
-router.post("/recipes/create", createRecipe);
+router.get("*/recipes", authenticateTokenMiddleware ,getAllRecipes);
+router.get("/recipes/search", authenticateTokenMiddleware, searchByKeyword);
+router.get("/recipes/:id", authenticateTokenMiddleware, getRecipeById);
+router.delete("/recipes/delete/:id",authenticateTokenMiddleware, deleteRecipeById);
+router.post("/recipes/create", authenticateTokenMiddleware, createRecipe);
 router.post("/users/register", registerNewUser);
 router.post("/users/login", loginUser);
-router.put("/recipes/update/:id", updateRecipe);
+router.put("/recipes/update/:id", authenticateTokenMiddleware, updateRecipe);
 
 module.exports = router;
