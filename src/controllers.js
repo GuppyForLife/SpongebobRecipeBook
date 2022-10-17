@@ -1,14 +1,26 @@
 require("dotenv").config();
 const { sequelize } = require("../db/db");
+const { Sequelize, Op } = require("sequelize");
 const { Recipe } = require("../db/Recipe");
 const { User } = require("../db/User");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const jwt = require("jsonwebtoken");
+const {
+  RECIPES_NOT_KP,
+  EDIT_COOKIES_RECIPE,
+  KRABBY_PATTY,
+} = require("../db/permissions");
 
 exports.getAllRecipes = async (req, res) => {
   try {
-    const recipes = await Recipe.findAll();
-
+    const { canAccessSecret } = req.permissions;
+    const recipes = await Recipe.findAll({
+      where: {
+        isSecret: {
+          [Op.or]: canAccessSecret,
+        },
+      },
+    });
     if (!recipes) {
       res.status(400).json({
         success: false,
@@ -31,14 +43,27 @@ exports.getAllRecipes = async (req, res) => {
 
 exports.getRecipeById = async (req, res) => {
   const recipeId = req.params.id;
+  const { canAccessSecret } = req.permissions
   try {
     const singleRecipe = await Recipe.findByPk(recipeId);
     if (!singleRecipe) {
-      res.status(400).json({
+      res.status(404).json({
         success: false,
         message: "No recipe found",
       });
     } else {
+      if(singleRecipe.isSecret && !canAccessSecret.includes(1)){
+        return res.status(403).json({
+          success: false,
+          message: "Permission Denied"
+        })
+      }
+      if(singleRecipe.isProtected && !canAccessSecret.includes(1)){
+        return res.status(403).json({
+          success: false,
+          message: "Permission Denied"
+        })
+      }
       res.status(200).json({
         singleRecipe,
         success: true,
@@ -97,6 +122,8 @@ exports.createRecipe = async (req, res) => {
 
 exports.updateRecipe = async (req, res) => {
   const recipeId = req.params.id;
+  const { permissions } = req.user;
+  //recipe permission vs user permission
   try {
     const recipeToUpdate = await Recipe.findByPk(recipeId);
     if (!recipeToUpdate) {
@@ -148,12 +175,16 @@ exports.registerNewUser = async (req, res) => {
   const SALT_COUNT = 8;
   const { username, name, password, email } = req.body;
   try {
+    const isExistingUser = await User.findOne({ email });
+    if (isExistingUser) {
+      return res.status(409).send("User Already Exist. Please Login");
+    }
     const hashedPassword = await bcrypt.hash(password, SALT_COUNT);
     const newUser = await User.create({
       username,
       name,
       password: hashedPassword,
-      email
+      email,
     });
     res.status(200).send(`Successfully created user: ${username}`);
   } catch (error) {
@@ -173,9 +204,17 @@ exports.loginUser = async (req, res) => {
         password,
         userToLogin.password
       );
+      const { email, isAdmin, id, name, accessLevel } = userToLogin;
       if (passwordsMatch) {
         const accessToken = jwt.sign(
-          { username: username },
+          {
+            id: id,
+            username: username,
+            name: name,
+            email: email,
+            isAdmin: isAdmin,
+            accessLevel: accessLevel,
+          },
           process.env.ACCESS_TOKEN_SECRET
         );
         res.status(200).json({
@@ -198,7 +237,7 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.authenticateTokenMiddleware = async (req, res, next) => {
-  const authHeader = req.header('Authorization');
+  const authHeader = req.header("Authorization");
   const token = authHeader && authHeader.split(" ")[1];
   console.log(token);
   if (token === null) {
@@ -210,6 +249,17 @@ exports.authenticateTokenMiddleware = async (req, res, next) => {
       return res.sendStatus(403);
     }
     req.user = user;
+    const { accessLevel } = user;
+    const canAccessSecret = [0];
+    if ((accessLevel & KRABBY_PATTY) != 0) {
+      canAccessSecret.push(1);
+    }
+    req.permissions = {
+      canAccessSecret,
+    };
     next();
   });
+  // if ((accessLevel & EDIT_COOKIES_RECIPE) != 0) {
+  //   isProtected.push(1);
+  // }
 };

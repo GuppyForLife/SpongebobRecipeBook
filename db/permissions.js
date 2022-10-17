@@ -1,0 +1,5 @@
+const RECIPES_NOT_KP = 1;
+const KRABBY_PATTY = 2;
+const EDIT_COOKIES_RECIPE = 4;
+
+module.exports = { RECIPES_NOT_KP, KRABBY_PATTY, EDIT_COOKIES_RECIPE };
