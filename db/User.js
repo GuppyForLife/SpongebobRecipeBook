@@ -6,5 +6,6 @@ const User = sequelize.define("user", {
   password: Sequelize.STRING,
   email: Sequelize.STRING,
   accessLevel: Sequelize.INTEGER,
+  isAdmin: Sequelize.BOOLEAN
 });
 module.exports = { User };
