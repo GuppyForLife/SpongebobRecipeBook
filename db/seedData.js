@@ -3,12 +3,7 @@ const {
   EDIT_COOKIES_RECIPE,
   KRABBY_PATTY,
 } = require("./permissions");
-
-const createAccessLevel = (...arrayOfPermissions) => {
-  return arrayOfPermissions.reduce((flag, currentPermission) => {
-    return (flag |= currentPermission);
-  }, RECIPES_NOT_KP);
-};
+const { createAccessLevel } = require('./createAccessLevel');
 
 const recipes = [
   {
@@ -74,6 +69,7 @@ const users = [
     password: "Money$",
     email: "eugene.krabs@bikinibottom.net",
     accessLevel: createAccessLevel(RECIPES_NOT_KP, KRABBY_PATTY),
+    isAdmin: false
   },
   {
     username: "Grams",
@@ -81,6 +77,7 @@ const users = [
     password: "PatrickIsMyFavorite",
     email: "grandma.squarepants@bikinibottom.net",
     accessLevel: createAccessLevel(RECIPES_NOT_KP, EDIT_COOKIES_RECIPE),
+    isAdmin: false
   },
   {
     username: "IHateItHere",
@@ -88,6 +85,7 @@ const users = [
     password: "SquilliamSucks",
     email: "squidward.tentacles@bikinibottom.net",
     accessLevel: createAccessLevel(RECIPES_NOT_KP, KRABBY_PATTY),
+    isAdmin: false
   },
   {
     username: "Tom",
@@ -95,6 +93,7 @@ const users = [
     password: "CHOCOLATE",
     email: "tom.smith@bikinibottom.net",
     accessLevel: createAccessLevel(RECIPES_NOT_KP),
+    isAdmin: false
   },
   {
     username: "SBobSPants",
@@ -106,6 +105,7 @@ const users = [
       KRABBY_PATTY,
       EDIT_COOKIES_RECIPE
     ),
+    isAdmin: true
   },
   {
     username: "WalterTheWaitor",
@@ -113,6 +113,7 @@ const users = [
     password: "goofyGoobs",
     email: "walter.waitor@bikinibottom.net",
     accessLevel: createAccessLevel(RECIPES_NOT_KP),
+    isAdmin: false
   },
 ];
 

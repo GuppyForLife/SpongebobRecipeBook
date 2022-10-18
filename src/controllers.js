@@ -10,6 +10,7 @@ const {
   EDIT_COOKIES_RECIPE,
   KRABBY_PATTY,
 } = require("../db/permissions");
+const { createAccessLevel } = require("../db/createAccessLevel");
 
 exports.getAllRecipes = async (req, res) => {
   try {
@@ -43,7 +44,7 @@ exports.getAllRecipes = async (req, res) => {
 
 exports.getRecipeById = async (req, res) => {
   const recipeId = req.params.id;
-  const { canAccessSecret } = req.permissions
+  const { canAccessSecret } = req.permissions;
   try {
     const singleRecipe = await Recipe.findByPk(recipeId);
     if (!singleRecipe) {
@@ -52,17 +53,11 @@ exports.getRecipeById = async (req, res) => {
         message: "No recipe found",
       });
     } else {
-      if(singleRecipe.isSecret && !canAccessSecret.includes(1)){
+      if (singleRecipe.isSecret && !canAccessSecret.includes(1)) {
         return res.status(403).json({
           success: false,
-          message: "Permission Denied"
-        })
-      }
-      if(singleRecipe.isProtected && !canAccessSecret.includes(1)){
-        return res.status(403).json({
-          success: false,
-          message: "Permission Denied"
-        })
+          message: "Permission Denied",
+        });
       }
       res.status(200).json({
         singleRecipe,
@@ -80,26 +75,31 @@ exports.getRecipeById = async (req, res) => {
 
 exports.deleteRecipeById = async (req, res) => {
   const recipeId = req.params.id;
-  try {
-    const recipeToDelete = await Recipe.findByPk(recipeId);
-    if (!recipeToDelete) {
-      res.status(400).json({
-        success: false,
-        message: "Recipe not found",
-      });
-    } else {
-      const deletedRecipe = await recipeToDelete.destroy();
-      res.status(200).json({
-        deletedRecipe,
-        success: true,
-        message: "Recipe successfully deleted",
-      });
+  const { isAdmin } = req.user;
+  if (isAdmin) {
+    try {
+      const recipeToDelete = await Recipe.findByPk(recipeId);
+      if (!recipeToDelete) {
+        res.status(400).json({
+          success: false,
+          message: "Recipe not found",
+        });
+      } else {
+        const deletedRecipe = await recipeToDelete.destroy();
+        res.status(200).json({
+          deletedRecipe,
+          success: true,
+          message: "Recipe successfully deleted",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      res
+        .status(400)
+        .json({ success: false, message: `- Error ${error.message}` });
     }
-  } catch (error) {
-    console.log(error);
-    res
-      .status(400)
-      .json({ success: false, message: `- Error ${error.message}` });
+  } else {
+    res.status(403).json({ success: false, message: "Permission Denied" });
   }
 };
 
@@ -122,14 +122,26 @@ exports.createRecipe = async (req, res) => {
 
 exports.updateRecipe = async (req, res) => {
   const recipeId = req.params.id;
-  const { permissions } = req.user;
-  //recipe permission vs user permission
+  const { canAccessProtected } = req.permissions;
+  const { canAccessSecret } = req.permissions;
   try {
     const recipeToUpdate = await Recipe.findByPk(recipeId);
     if (!recipeToUpdate) {
       res.status(400).json({
         success: false,
         message: "Recipe not found",
+      });
+    }
+    if (recipeToUpdate.isSecret && !canAccessSecret.includes(1)) {
+      return res.status(403).json({
+        success: false,
+        message: "Permission Denied",
+      });
+    }
+    if (recipeToUpdate.isProtected && !canAccessProtected.includes(1)) {
+      return res.status(403).json({
+        success: false,
+        message: "Permission Denied",
       });
     } else {
       const updateRecipe = await recipeToUpdate.update(req.body);
@@ -149,7 +161,14 @@ exports.updateRecipe = async (req, res) => {
 
 exports.searchByKeyword = async (req, res) => {
   try {
-    const allRecipes = await Recipe.findAll();
+    const { canAccessSecret } = req.permissions;
+    const allRecipes = await Recipe.findAll({
+      where: {
+        isSecret: {
+          [Op.or]: canAccessSecret,
+        },
+      },
+    });
     const keyword = req.query.keyword.toLowerCase();
     const recipesFound = allRecipes.filter((recipe) =>
       recipe.title.toLowerCase().includes(keyword)
@@ -159,7 +178,7 @@ exports.searchByKeyword = async (req, res) => {
       recipesFound,
       success: true,
       message:
-        recipesFound.lenght > 0
+        recipesFound.length > 0
           ? `Recipes with the keyword: ${keyword} in the title`
           : `No matching titles containing the keyword: ${keyword}`,
     });
@@ -175,7 +194,7 @@ exports.registerNewUser = async (req, res) => {
   const SALT_COUNT = 8;
   const { username, name, password, email } = req.body;
   try {
-    const isExistingUser = await User.findOne({ email });
+    const isExistingUser = await User.findOne({ where: { email } });
     if (isExistingUser) {
       return res.status(409).send("User Already Exist. Please Login");
     }
@@ -185,6 +204,8 @@ exports.registerNewUser = async (req, res) => {
       name,
       password: hashedPassword,
       email,
+      isAdmin: false,
+      accessLevel: createAccessLevel(),
     });
     res.status(200).send(`Successfully created user: ${username}`);
   } catch (error) {
@@ -251,11 +272,16 @@ exports.authenticateTokenMiddleware = async (req, res, next) => {
     req.user = user;
     const { accessLevel } = user;
     const canAccessSecret = [0];
+    const canAccessProtected = [0];
     if ((accessLevel & KRABBY_PATTY) != 0) {
       canAccessSecret.push(1);
     }
+    if ((accessLevel & EDIT_COOKIES_RECIPE) != 0) {
+      canAccessProtected.push(1);
+    }
     req.permissions = {
       canAccessSecret,
+      canAccessProtected,
     };
     next();
   });
