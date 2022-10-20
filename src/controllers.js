@@ -1,12 +1,10 @@
 require("dotenv").config();
-const { sequelize } = require("../db/db");
-const { Sequelize, Op } = require("sequelize");
+const { Op } = require("sequelize");
 const { Recipe } = require("../db/Recipe");
 const { User } = require("../db/User");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const jwt = require("jsonwebtoken");
 const {
-  RECIPES_NOT_KP,
   EDIT_COOKIES_RECIPE,
   KRABBY_PATTY,
 } = require("../db/permissions");
@@ -48,7 +46,7 @@ exports.getRecipeById = async (req, res) => {
   try {
     const singleRecipe = await Recipe.findByPk(recipeId);
     if (!singleRecipe) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: "No recipe found",
       });
@@ -127,7 +125,7 @@ exports.updateRecipe = async (req, res) => {
   try {
     const recipeToUpdate = await Recipe.findByPk(recipeId);
     if (!recipeToUpdate) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: "Recipe not found",
       });
@@ -145,7 +143,7 @@ exports.updateRecipe = async (req, res) => {
       });
     } else {
       const updateRecipe = await recipeToUpdate.update(req.body);
-      res.status(200).json({
+      return res.status(200).json({
         updateRecipe,
         success: true,
         message: "Recipe successfully updated",
