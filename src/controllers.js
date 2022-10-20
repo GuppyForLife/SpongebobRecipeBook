@@ -23,7 +23,7 @@ exports.getAllRecipes = async (req, res) => {
       },
     });
     if (!recipes) {
-      res.status(400).json({
+      res.status(404).json({
         success: false,
         message: "No products found",
       });
@@ -37,7 +37,7 @@ exports.getAllRecipes = async (req, res) => {
   } catch (error) {
     console.log(error);
     res
-      .status(400)
+      .status(500)
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
@@ -68,7 +68,7 @@ exports.getRecipeById = async (req, res) => {
   } catch (error) {
     console.log(error);
     res
-      .status(400)
+      .status(500)
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
@@ -80,7 +80,7 @@ exports.deleteRecipeById = async (req, res) => {
     try {
       const recipeToDelete = await Recipe.findByPk(recipeId);
       if (!recipeToDelete) {
-        res.status(400).json({
+        res.status(404).json({
           success: false,
           message: "Recipe not found",
         });
@@ -95,7 +95,7 @@ exports.deleteRecipeById = async (req, res) => {
     } catch (error) {
       console.log(error);
       res
-        .status(400)
+        .status(500)
         .json({ success: false, message: `- Error ${error.message}` });
     }
   } else {
@@ -115,7 +115,7 @@ exports.createRecipe = async (req, res) => {
   } catch (error) {
     console.log(error);
     res
-      .status(400)
+      .status(500)
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
@@ -127,7 +127,7 @@ exports.updateRecipe = async (req, res) => {
   try {
     const recipeToUpdate = await Recipe.findByPk(recipeId);
     if (!recipeToUpdate) {
-      res.status(400).json({
+      res.status(404).json({
         success: false,
         message: "Recipe not found",
       });
@@ -154,7 +154,7 @@ exports.updateRecipe = async (req, res) => {
   } catch (error) {
     console.log(error);
     res
-      .status(400)
+      .status(500)
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
@@ -185,7 +185,7 @@ exports.searchByKeyword = async (req, res) => {
   } catch (error) {
     console.log(error);
     res
-      .status(400)
+      .status(500)
       .json({ success: false, message: `- Error ${error.message}` });
   }
 };
@@ -209,7 +209,7 @@ exports.registerNewUser = async (req, res) => {
     });
     res.status(200).send(`Successfully created user: ${username}`);
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: `User not created ~ error: ${error.message}`,
     });
@@ -250,7 +250,7 @@ exports.loginUser = async (req, res) => {
       res.status(401).send(`Incorrect username or password`);
     }
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: `User not logged in ~ error: ${error.message}`,
     });
@@ -285,7 +285,4 @@ exports.authenticateTokenMiddleware = async (req, res, next) => {
     };
     next();
   });
-  // if ((accessLevel & EDIT_COOKIES_RECIPE) != 0) {
-  //   isProtected.push(1);
-  // }
 };
