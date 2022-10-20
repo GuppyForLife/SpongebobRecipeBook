@@ -1,4 +1,5 @@
 require("dotenv").config();
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
 const { Op } = require("sequelize");
 const { Recipe } = require("../db/Recipe");
 const { User } = require("../db/User");
@@ -40,29 +41,29 @@ exports.getAllRecipes = async (req, res) => {
   }
 };
 
-exports.getRecipeById = async (req, res) => {
-  const recipeId = req.params.id;
+exports.getRecipeByTitle = async (req, res) => {
+  const recipeSlug = req.params.slug;
+  const recipeTitle = recipeSlug.split("-").join(" ").toLowerCase();
   const { canAccessSecret } = req.permissions;
   try {
-    const singleRecipe = await Recipe.findByPk(recipeId);
-    if (!singleRecipe) {
-      return res.status(404).json({
-        success: false,
-        message: "No recipe found",
-      });
-    } else {
-      if (singleRecipe.isSecret && !canAccessSecret.includes(1)) {
-        return res.status(403).json({
-          success: false,
-          message: "Permission Denied",
-        });
-      }
-      res.status(200).json({
-        singleRecipe,
-        success: true,
-        message: "Recipe returned",
-      });
-    }
+    const allRecipes = await Recipe.findAll({
+      where: {
+        isSecret: {
+          [Op.or]: canAccessSecret,
+        },
+      },
+    });
+    const recipeFound = allRecipes.filter((recipe) =>
+      recipe.title.toLowerCase() === recipeTitle
+    );
+    res.status(200).json({
+      recipeFound,
+      success: true,
+      message:
+        recipeFound
+          ? `Recipes with the title: ${recipeTitle}`
+          : `No matching titles`,
+    });
   } catch (error) {
     console.log(error);
     res
@@ -71,21 +72,31 @@ exports.getRecipeById = async (req, res) => {
   }
 };
 
-exports.deleteRecipeById = async (req, res) => {
-  const recipeId = req.params.id;
+exports.deleteRecipeByTitle = async (req, res) => {
+  const recipeSlug = req.params.slug;
+  const recipeTitle = recipeSlug.split("-").join(" ").toLowerCase();
+  const { canAccessSecret } = req.permissions;
   const { isAdmin } = req.user;
   if (isAdmin) {
     try {
-      const recipeToDelete = await Recipe.findByPk(recipeId);
-      if (!recipeToDelete) {
+      const allRecipes = await Recipe.findAll({
+        where: {
+          isSecret: {
+            [Op.or]: canAccessSecret,
+          },
+        },
+      });
+      const recipeFound = allRecipes.filter((recipe) =>
+        recipe.title.toLowerCase() === recipeTitle
+      );
+      if (!recipeFound[0]) {
         res.status(404).json({
           success: false,
           message: "Recipe not found",
         });
       } else {
-        const deletedRecipe = await recipeToDelete.destroy();
+        const deletedRecipe = await recipeFound[0].destroy();
         res.status(200).json({
-          deletedRecipe,
           success: true,
           message: "Recipe successfully deleted",
         });
@@ -118,31 +129,41 @@ exports.createRecipe = async (req, res) => {
   }
 };
 
-exports.updateRecipe = async (req, res) => {
-  const recipeId = req.params.id;
+exports.updateRecipeByTitle = async (req, res) => {
+  const recipeSlug = req.params.slug;
+  const recipeTitle = recipeSlug.split("-").join(" ").toLowerCase();
   const { canAccessProtected } = req.permissions;
   const { canAccessSecret } = req.permissions;
   try {
-    const recipeToUpdate = await Recipe.findByPk(recipeId);
-    if (!recipeToUpdate) {
+    const allRecipes = await Recipe.findAll({
+      where: {
+        isSecret: {
+          [Op.or]: canAccessSecret,
+        },
+      },
+    });
+    const recipeToUpdate = allRecipes.filter((recipe) =>
+      recipe.title.toLowerCase() === recipeTitle
+    );
+    if (!recipeToUpdate[0]) {
       return res.status(404).json({
         success: false,
         message: "Recipe not found",
       });
     }
-    if (recipeToUpdate.isSecret && !canAccessSecret.includes(1)) {
+    if (recipeToUpdate[0].isSecret && !canAccessSecret.includes(1)) {
       return res.status(403).json({
         success: false,
         message: "Permission Denied",
       });
     }
-    if (recipeToUpdate.isProtected && !canAccessProtected.includes(1)) {
+    if (recipeToUpdate[0].isProtected && !canAccessProtected.includes(1)) {
       return res.status(403).json({
         success: false,
         message: "Permission Denied",
       });
     } else {
-      const updateRecipe = await recipeToUpdate.update(req.body);
+      const updateRecipe = await recipeToUpdate[0].update(req.body);
       return res.status(200).json({
         updateRecipe,
         success: true,
@@ -234,7 +255,7 @@ exports.loginUser = async (req, res) => {
             isAdmin: isAdmin,
             accessLevel: accessLevel,
           },
-          process.env.ACCESS_TOKEN_SECRET
+          ACCESS_TOKEN_SECRET
         );
         res.status(200).json({
           success: true,
@@ -268,7 +289,7 @@ const authorizeTokenForUser = (req, res) => {
     return res.sendStatus(401);
   }
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+  jwt.verify(token, ACCESS_TOKEN_SECRET, (err, user) => {
     if (err) {
       return res.sendStatus(403);
     }
