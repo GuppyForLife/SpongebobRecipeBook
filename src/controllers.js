@@ -60,7 +60,7 @@ exports.getRecipeByTitle = async (req, res) => {
       recipeFound,
       success: true,
       message:
-        recipeFound
+        recipeFound.length > 1
           ? `Recipes with the title: ${recipeTitle}`
           : `No matching titles`,
     });
@@ -277,7 +277,7 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.authenticateTokenMiddleware = async (req, res, next) => {
-  authorizeTokenForUser(req, res);
+  await authorizeTokenForUser(req, res);
   setUserPermissionLevel(req);
   next();
 };
