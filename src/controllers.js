@@ -258,9 +258,14 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.authenticateTokenMiddleware = async (req, res, next) => {
+  authorizeTokenForUser(req, res);
+  setUserPermissionLevel(req);
+  next();
+};
+
+const authorizeTokenForUser = (req, res) => {
   const authHeader = req.header("Authorization");
   const token = authHeader && authHeader.split(" ")[1];
-  console.log(token);
   if (token === null) {
     return res.sendStatus(401);
   }
@@ -270,19 +275,21 @@ exports.authenticateTokenMiddleware = async (req, res, next) => {
       return res.sendStatus(403);
     }
     req.user = user;
-    const { accessLevel } = user;
-    const canAccessSecret = [0];
-    const canAccessProtected = [0];
-    if ((accessLevel & KRABBY_PATTY) != 0) {
-      canAccessSecret.push(1);
-    }
-    if ((accessLevel & EDIT_COOKIES_RECIPE) != 0) {
-      canAccessProtected.push(1);
-    }
-    req.permissions = {
-      canAccessSecret,
-      canAccessProtected,
-    };
-    next();
   });
 };
+
+const setUserPermissionLevel = (req) => {
+  const { accessLevel } = req.user;
+  const canAccessSecret = [0];
+  const canAccessProtected = [0];
+  if ((accessLevel & KRABBY_PATTY) != 0) {
+    canAccessSecret.push(1);
+  }
+  if ((accessLevel & EDIT_COOKIES_RECIPE) != 0) {
+    canAccessProtected.push(1);
+  }
+  req.permissions = {
+    canAccessSecret,
+    canAccessProtected,
+  };
+}
