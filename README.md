@@ -28,7 +28,7 @@ MySQL, Bcrypt, JSON Web Tokens, and tested in Postman.
 
 ### Screenshot
 
-N/A
+![](./screenshot/screenshotRecipeBook.png)
 
 ### Links
 
