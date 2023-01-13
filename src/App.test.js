@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+/** @jest-environment jsdom */
+import '@testing-library/jest-dom';
 
 it('should do something amazing', () => {
-  expect(true).toBe(true);
+  expect(true).toBe(false);
 });
