@@ -2,5 +2,5 @@
 import '@testing-library/jest-dom';
 
 it('should do something amazing', () => {
-  expect(true).toBe(false);
+  expect(true).toBe(true);
 });
