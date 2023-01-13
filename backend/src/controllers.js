@@ -1,14 +1,11 @@
 require("dotenv").config();
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const { Op } = require("sequelize");
 const { Recipe } = require("../db/Recipe");
 const { User } = require("../db/User");
 const bcrypt = require("bcryptjs/dist/bcrypt");
 const jwt = require("jsonwebtoken");
-const {
-  EDIT_COOKIES_RECIPE,
-  KRABBY_PATTY,
-} = require("../db/permissions");
+const { EDIT_COOKIES_RECIPE, KRABBY_PATTY } = require("../db/permissions");
 const { createAccessLevel } = require("../db/createAccessLevel");
 
 exports.getAllRecipes = async (req, res) => {
@@ -53,8 +50,8 @@ exports.getRecipeByTitle = async (req, res) => {
         },
       },
     });
-    const recipeFound = allRecipes.filter((recipe) =>
-      recipe.title.toLowerCase() === recipeTitle
+    const recipeFound = allRecipes.filter(
+      (recipe) => recipe.title.toLowerCase() === recipeTitle
     );
     res.status(200).json({
       recipeFound,
@@ -86,8 +83,8 @@ exports.deleteRecipeByTitle = async (req, res) => {
           },
         },
       });
-      const recipeFound = allRecipes.filter((recipe) =>
-        recipe.title.toLowerCase() === recipeTitle
+      const recipeFound = allRecipes.filter(
+        (recipe) => recipe.title.toLowerCase() === recipeTitle
       );
       if (!recipeFound[0]) {
         res.status(404).json({
@@ -142,8 +139,8 @@ exports.updateRecipeByTitle = async (req, res) => {
         },
       },
     });
-    const recipeToUpdate = allRecipes.filter((recipe) =>
-      recipe.title.toLowerCase() === recipeTitle
+    const recipeToUpdate = allRecipes.filter(
+      (recipe) => recipe.title.toLowerCase() === recipeTitle
     );
     if (!recipeToUpdate[0]) {
       return res.status(404).json({
@@ -311,4 +308,4 @@ const setUserPermissionLevel = (req) => {
     canAccessSecret,
     canAccessProtected,
   };
-}
+};
