@@ -4,7 +4,7 @@ import HomePage from './components/HomeComponent';
 
 function App() {
   return (
-    <div className='App'>
+    <div className='container'>
       <HomePage/>
       <Book/>
     </div>
